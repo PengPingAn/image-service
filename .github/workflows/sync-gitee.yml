@@ -3,30 +3,45 @@ name: Sync Gitee Images
 on:
   workflow_dispatch:   # 手动触发
   schedule:
-    - cron: '0 * * * *'  # 每小时自动同步一次
+    - cron: '0 * * * *'  # 每小时同步一次，可修改频率
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      # 1️⃣ Checkout GitHub 仓库
       - name: Checkout GitHub Repo
         uses: actions/checkout@v3
+        with:
+          persist-credentials: true  # 保留推送权限
 
+      # 2️⃣ 设置 Git 用户信息
       - name: Setup Git
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@users.noreply.github.com"
 
+      # 3️⃣ 克隆 Gitee 仓库
       - name: Clone Gitee Repo
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         run: |
-          git clone https://$GITEE_TOKEN@gitee.com/leefugui/love-world-image-service.git gitee-repo
+          # 替换 leefugui/love-world-image-service 为你的 Gitee 用户名/仓库
+          git clone https://leefugui:$GITEE_TOKEN@gitee.com/leefugui/love-world-image-service.git gitee-repo
 
+      # 4️⃣ 查看 Gitee 仓库文件（可选调试）
+      - name: List Gitee repo
+        run: ls -R gitee-repo
+
+      # 5️⃣ 复制文件到 GitHub 仓库
       - name: Copy Files
         run: |
-          cp -r gitee-repo/images/* ./images/
+          # 创建 images 目录（如果不存在）
+          mkdir -p images
+          # 复制 Gitee 仓库 images 下的所有文件
+          cp -r gitee-repo/images/* ./images/ || echo "No images to copy"
 
+      # 6️⃣ Commit & Push
       - name: Commit & Push
         run: |
           git add .
