@@ -9,12 +9,12 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout GitHub Repo
+      # 1️⃣ Checkout GitHub 仓库
       - name: Checkout GitHub Repo
         uses: actions/checkout@v3
         with:
-          persist-credentials: false  # ⚠️ 关闭 GITHUB_TOKEN 避免干扰
-          submodules: false           # ⚠️ 避免 No url found 错误
+          persist-credentials: false  # 避免 GITHUB_TOKEN 干扰 PAT
+          submodules: false           # 避免子模块报错
 
       # 2️⃣ 设置 Git 用户信息
       - name: Setup Git
@@ -22,29 +22,28 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@users.noreply.github.com"
 
-      # 3️⃣ 克隆 Gitee 仓库
+      # 3️⃣ 克隆 Gitee 仓库到临时目录
       - name: Clone Gitee Repo
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         run: |
-          git clone https://leefugui:$GITEE_TOKEN@gitee.com/leefugui/love-world-image-service.git gitee-repo
+          git clone https://leefugui:$GITEE_TOKEN@gitee.com/leefugui/love-world-image-service.git temp-gitee
 
-      # 4️⃣ 查看 Gitee 仓库文件（可选调试）
+      # 4️⃣ 查看 Gitee 仓库文件（可选）
       - name: List Gitee repo
-        run: ls -R gitee-repo
+        run: ls -R temp-gitee
 
-      # 5️⃣ 复制文件到 GitHub 仓库
+      # 5️⃣ 复制文件到 GitHub 仓库的 images 文件夹
       - name: Copy Files
         run: |
           mkdir -p images
-          cp -r gitee-repo/images/* ./images/ || echo "No images to copy"
+          cp -r temp-gitee/images/* ./images/ || echo "No images to copy"
 
-      # 6️⃣ Commit & Push
+      # 6️⃣ Commit & Push 到 GitHub
       - name: Commit & Push
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git add .
           git commit -m "Sync from Gitee" || echo "No changes"
-          # ⚠️ 使用 PAT URL 明确分支 main
           git push https://x-access-token:$GH_PAT@github.com/${{ github.repository }}.git main
