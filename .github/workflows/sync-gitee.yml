@@ -3,7 +3,7 @@ name: Sync Gitee Images
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 * * * *'  # 每小时同步一次，可修改
 
 jobs:
   sync:
@@ -13,7 +13,8 @@ jobs:
       - name: Checkout GitHub Repo
         uses: actions/checkout@v3
         with:
-          persist-credentials: false  # ⚠️ 关闭，避免用 GITHUB_TOKEN
+          persist-credentials: false  # ⚠️ 关闭 GITHUB_TOKEN 避免干扰
+          submodules: false           # ⚠️ 避免 No url found 错误
 
       # 2️⃣ 设置 Git 用户信息
       - name: Setup Git
@@ -45,5 +46,5 @@ jobs:
         run: |
           git add .
           git commit -m "Sync from Gitee" || echo "No changes"
-          # ⚠️ 使用 PAT URL 明确分支
+          # ⚠️ 使用 PAT URL 明确分支 main
           git push https://x-access-token:$GH_PAT@github.com/${{ github.repository }}.git main
