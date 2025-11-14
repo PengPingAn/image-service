@@ -1,19 +1,19 @@
 name: Sync Gitee Images
 
 on:
-  workflow_dispatch:   # 手动触发
+  workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'  # 每小时同步一次，可修改频率
+    - cron: '0 * * * *'
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout GitHub 仓库
+      # 1️⃣ Checkout GitHub Repo
       - name: Checkout GitHub Repo
         uses: actions/checkout@v3
         with:
-          persist-credentials: true  # 保留推送权限
+          persist-credentials: false  # ⚠️ 关闭，避免用 GITHUB_TOKEN
 
       # 2️⃣ 设置 Git 用户信息
       - name: Setup Git
@@ -26,7 +26,6 @@ jobs:
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
         run: |
-          # 替换 leefugui/love-world-image-service 为你的 Gitee 用户名/仓库
           git clone https://leefugui:$GITEE_TOKEN@gitee.com/leefugui/love-world-image-service.git gitee-repo
 
       # 4️⃣ 查看 Gitee 仓库文件（可选调试）
@@ -36,15 +35,15 @@ jobs:
       # 5️⃣ 复制文件到 GitHub 仓库
       - name: Copy Files
         run: |
-          # 创建 images 目录（如果不存在）
           mkdir -p images
-          # 复制 Gitee 仓库 images 下的所有文件
           cp -r gitee-repo/images/* ./images/ || echo "No images to copy"
 
       # 6️⃣ Commit & Push
       - name: Commit & Push
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git add .
           git commit -m "Sync from Gitee" || echo "No changes"
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git
-
+          # ⚠️ 使用 PAT URL 明确分支
+          git push https://x-access-token:$GH_PAT@github.com/${{ github.repository }}.git main
